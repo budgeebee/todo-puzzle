@@ -1,0 +1,151 @@
+.puzzle-board h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  max-width: 300px;
+  margin: 0 auto;
+  background: #1a1a2e;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.puzzle-piece {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.puzzle-piece:not(.revealed) {
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.puzzle-piece.revealed {
+  animation: reveal 0.5s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@keyframes reveal {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.piece-number {
+  color: #4a5568;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Celebration overlay */
+.celebration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.confetti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  animation: fall 3s linear infinite;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.message {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  z-index: 1001;
+  animation: popIn 0.5s ease;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.message h3 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.message p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.message button {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.message button:hover {
+  transform: scale(1.05);
+}
