@@ -1,58 +1,140 @@
-.puzzle-board h2 {
-  margin-bottom: 20px;
-  color: #333;
+.puzzle-board {
+  padding: 20px;
 }
 
-.grid {
+.puzzle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.city-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.city-info h2 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.change-city-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.change-city-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #e2e8f0;
+}
+
+.progress {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.organic-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
-  max-width: 300px;
+  background: linear-gradient(145deg, #0f0f23 0%, #1a1a2e 100%);
+  border-radius: 16px;
+  box-shadow: 
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 1px 0 rgba(255,255,255,0.05);
+  max-width: 360px;
   margin: 0 auto;
-  background: #1a1a2e;
-  padding: 8px;
-  border-radius: 8px;
 }
 
 .puzzle-piece {
   aspect-ratio: 1;
-  border-radius: 4px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: default;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   position: relative;
   overflow: hidden;
 }
 
 .puzzle-piece:not(.revealed) {
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  background: linear-gradient(145deg, #1e1e32 0%, #151528 100%);
+}
+
+.puzzle-piece:not(.revealed)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(0,0,0,0.1) 4px,
+      rgba(0,0,0,0.1) 8px
+    );
+  opacity: 0.5;
+}
+
+.puzzle-piece:not(.revealed):hover {
+  filter: brightness(1.1);
+  transform: scale(1.02) !important;
 }
 
 .puzzle-piece.revealed {
-  animation: reveal 0.5s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 
+    0 4px 15px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
-@keyframes reveal {
+.puzzle-piece.revealed.has-image {
+  border: 2px solid rgba(255,255,255,0.4);
+}
+
+@keyframes revealPop {
   0% {
-    transform: scale(0.8);
+    transform: scale(0.3) rotate(-15deg);
     opacity: 0;
+    filter: blur(10px);
   }
-  50% {
-    transform: scale(1.1);
+  60% {
+    transform: scale(1.1) rotate(3deg);
+    opacity: 1;
+    filter: blur(0);
   }
   100% {
-    transform: scale(1);
+    transform: scale(1) rotate(0deg);
     opacity: 1;
   }
 }
 
 .piece-number {
-  color: #4a5568;
-  font-size: 0.75rem;
-  font-weight: 600;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+.piece-texture {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a5568' fill-opacity='0.4' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* Celebration overlay */
@@ -62,12 +144,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.5s ease;
+  animation: fadeIn 0.4s ease;
 }
 
 @keyframes fadeIn {
@@ -87,10 +170,22 @@
 
 .confetti-piece {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  top: -10px;
-  animation: fall 3s linear infinite;
+  width: 12px;
+  height: 12px;
+  top: -20px;
+  animation: fall linear infinite;
+}
+
+.confetti-piece.star {
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.confetti-piece.circle {
+  border-radius: 50%;
+}
+
+.confetti-piece.square {
+  border-radius: 2px;
 }
 
 @keyframes fall {
@@ -99,24 +194,31 @@
     opacity: 1;
   }
   100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
+    transform: translateY(110vh) rotate(1080deg);
+    opacity: 0.3;
   }
 }
 
 .message {
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
+  background: linear-gradient(145deg, #1a1a2e 0%, #0f0f23 100%);
+  padding: 50px 60px;
+  border-radius: 24px;
   text-align: center;
   z-index: 1001;
-  animation: popIn 0.5s ease;
+  animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 
+    0 25px 50px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 @keyframes popIn {
   0% {
-    transform: scale(0.5);
+    transform: scale(0.3);
     opacity: 0;
+  }
+  70% {
+    transform: scale(1.05);
   }
   100% {
     transform: scale(1);
@@ -124,28 +226,58 @@
   }
 }
 
+.trophy {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 .message h3 {
   font-size: 2rem;
-  margin-bottom: 10px;
-  color: #333;
+  margin: 0 0 12px 0;
+  color: #e2e8f0;
+  font-weight: 700;
 }
 
 .message p {
-  color: #666;
-  margin-bottom: 20px;
+  color: #94a3b8;
+  margin-bottom: 28px;
+  font-size: 1.1rem;
 }
 
 .message button {
-  padding: 12px 32px;
+  padding: 14px 36px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .message button:hover {
-  transform: scale(1.05);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+}
+
+.full-image-preview {
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.full-image-preview img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
 }
