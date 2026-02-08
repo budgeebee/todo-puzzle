@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TodoList from './components/TodoList';
 import PuzzleBoard from './components/PuzzleBoard';
 import CitySelector from './components/CitySelector';
+import { generatePolyominoPieces } from './utils/polyomino';
 import './App.css';
 
 const UNSPLASH_ACCESS_KEY = 'QwIljWVcTOpWGxvZVL4iVN8ZdBOm5EaeAZC73GO3FCE';
@@ -20,43 +21,69 @@ function App() {
     return localStorage.getItem('cityImage') || null;
   });
 
-  // Calculate puzzle size based on todo count
-  const getPuzzleSize = (count) => {
-    if (count < 4) return 4;
-    const sqrt = Math.ceil(Math.sqrt(count));
-    return sqrt * sqrt;
-  };
-
-  const puzzleSize = getPuzzleSize(todos.length);
+  // Track completed todos count
+  const completedCount = todos.filter(t => t.completed).length;
   
-  const [revealed, setRevealed] = useState(() => {
-    const saved = localStorage.getItem('revealed');
+  // Track how many reveals the user has earned but not used
+  const [availableReveals, setAvailableReveals] = useState(() => {
+    const saved = localStorage.getItem('availableReveals');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // Track which pieces are revealed
+  const [revealedPieces, setRevealedPieces] = useState(() => {
+    const saved = localStorage.getItem('revealedPieces');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  // Generate puzzle pieces based on todo count
+  const [puzzleLayout, setPuzzleLayout] = useState(() => {
+    const saved = localStorage.getItem('puzzleLayout');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.length !== puzzleSize) {
-        const newRevealed = Array(puzzleSize).fill(false);
-        parsed.forEach((val, idx) => {
-          if (idx < puzzleSize) newRevealed[idx] = val;
-        });
-        return newRevealed;
-      }
-      return parsed;
+      return JSON.parse(saved);
     }
-    return Array(puzzleSize).fill(false);
+    return null;
   });
 
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Regenerate puzzle when todo count changes
+  useEffect(() => {
+    if (todos.length > 0 && (!puzzleLayout || puzzleLayout.todoCount !== todos.length)) {
+      const layout = generatePolyominoPieces(todos.length);
+      setPuzzleLayout({ ...layout, todoCount: todos.length });
+      // Reset revealed pieces when layout changes
+      setRevealedPieces(new Set());
+      setAvailableReveals(0);
+    }
+  }, [todos.length]);
+
+  // Update available reveals when todos are completed
+  useEffect(() => {
+    const revealedCount = revealedPieces.size;
+    const earnedReveals = completedCount;
+    const currentAvailable = earnedReveals - revealedCount;
+    setAvailableReveals(Math.max(0, currentAvailable));
+  }, [completedCount, revealedPieces]);
+
+  // Persist state
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
   useEffect(() => {
-    localStorage.setItem('revealed', JSON.stringify(revealed));
-    if (revealed.every(piece => piece) && revealed.length > 0 && revealed.filter(r => r).length > 0) {
-      setShowCelebration(true);
+    localStorage.setItem('availableReveals', availableReveals.toString());
+  }, [availableReveals]);
+
+  useEffect(() => {
+    localStorage.setItem('revealedPieces', JSON.stringify([...revealedPieces]));
+  }, [revealedPieces]);
+
+  useEffect(() => {
+    if (puzzleLayout) {
+      localStorage.setItem('puzzleLayout', JSON.stringify(puzzleLayout));
     }
-  }, [revealed]);
+  }, [puzzleLayout]);
 
   useEffect(() => {
     if (selectedCity) {
@@ -70,19 +97,12 @@ function App() {
     }
   }, [cityImage]);
 
-  // Resize revealed array when puzzle size changes
+  // Check for puzzle completion
   useEffect(() => {
-    setRevealed(prev => {
-      if (prev.length !== puzzleSize) {
-        const newRevealed = Array(puzzleSize).fill(false);
-        prev.forEach((val, idx) => {
-          if (idx < puzzleSize) newRevealed[idx] = val;
-        });
-        return newRevealed;
-      }
-      return prev;
-    });
-  }, [puzzleSize]);
+    if (puzzleLayout && revealedPieces.size === puzzleLayout.pieces.length && revealedPieces.size > 0) {
+      setShowCelebration(true);
+    }
+  }, [revealedPieces, puzzleLayout]);
 
   const fetchCityImage = async (city) => {
     try {
@@ -96,7 +116,6 @@ function App() {
       );
       const data = await response.json();
       if (data.results && data.results.length > 0) {
-        // Use the small size for puzzle pieces
         return data.results[0].urls.small;
       }
       return null;
@@ -111,35 +130,39 @@ function App() {
     const imageUrl = await fetchCityImage(city);
     if (imageUrl) {
       setCityImage(imageUrl);
-      // Reset puzzle when city changes
-      setRevealed(Array(puzzleSize).fill(false));
-      setShowCelebration(false);
+      resetPuzzle();
     }
   };
 
-  const updateRevealed = () => {
-    setRevealed(prev => {
-      const updated = [...prev];
-      const firstUnrevealed = updated.findIndex(r => !r);
-      if (firstUnrevealed !== -1) {
-        updated[firstUnrevealed] = true;
-      }
-      return updated;
-    });
+  const handleRevealPiece = (pieceId) => {
+    if (availableReveals > 0 && !revealedPieces.has(pieceId)) {
+      setRevealedPieces(prev => new Set([...prev, pieceId]));
+    }
   };
 
   const resetPuzzle = () => {
-    setRevealed(Array(puzzleSize).fill(false));
+    setRevealedPieces(new Set());
+    setAvailableReveals(0);
     setShowCelebration(false);
+    // Regenerate layout
+    if (todos.length > 0) {
+      const layout = generatePolyominoPieces(todos.length);
+      setPuzzleLayout({ ...layout, todoCount: todos.length });
+    }
   };
 
   const clearCity = () => {
     setSelectedCity(null);
     setCityImage(null);
+    setPuzzleLayout(null);
     localStorage.removeItem('selectedCity');
     localStorage.removeItem('cityImage');
+    localStorage.removeItem('puzzleLayout');
     resetPuzzle();
   };
+
+  // Check if puzzle should be visible (at least one todo completed)
+  const showPuzzle = completedCount > 0;
 
   return (
     <div className="app">
@@ -152,10 +175,11 @@ function App() {
         <div className="todo-section">
           <TodoList 
             todos={todos} 
-            setTodos={setTodos} 
-            onTodoComplete={updateRevealed}
-            revealedCount={revealed.filter(r => r).length}
-            totalPieces={puzzleSize}
+            setTodos={setTodos}
+            completedCount={completedCount}
+            totalTodos={todos.length}
+            availableReveals={availableReveals}
+            showPuzzle={showPuzzle}
           />
         </div>
         
@@ -164,11 +188,14 @@ function App() {
             <CitySelector onSelect={handleCitySelect} />
           ) : (
             <PuzzleBoard 
-              revealed={revealed} 
+              puzzleLayout={puzzleLayout}
+              revealedPieces={revealedPieces}
+              availableReveals={availableReveals}
+              showPuzzle={showPuzzle}
               showCelebration={showCelebration}
+              onRevealPiece={handleRevealPiece}
               onReset={resetPuzzle}
               onChangeCity={clearCity}
-              totalPieces={puzzleSize}
               cityImage={cityImage}
               cityName={selectedCity}
             />

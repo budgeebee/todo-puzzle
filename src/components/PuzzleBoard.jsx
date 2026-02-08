@@ -1,7 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import './PuzzleBoard.css';
 
-function PuzzleBoard({ revealed, showCelebration, onReset, onChangeCity, totalPieces, cityImage, cityName }) {
+function PuzzleBoard({ 
+  puzzleLayout, 
+  revealedPieces, 
+  availableReveals, 
+  showPuzzle,
+  showCelebration, 
+  onRevealPiece, 
+  onReset, 
+  onChangeCity, 
+  cityImage, 
+  cityName 
+}) {
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -10,59 +21,36 @@ function PuzzleBoard({ revealed, showCelebration, onReset, onChangeCity, totalPi
     }
   }, [showCelebration]);
 
+  if (!puzzleLayout) return null;
+
+  const { pieces, rows, cols } = puzzleLayout;
+  const totalPieces = pieces.length;
+  const revealedCount = revealedPieces.size;
+
   // Calculate grid dimensions
-  const getGridDimensions = (n) => {
-    const sqrt = Math.sqrt(n);
-    const cols = Math.ceil(sqrt);
-    const rows = Math.ceil(n / cols);
-    return { cols, rows };
+  const gridStyle = {
+    gridTemplateRows: `repeat(${rows}, 1fr)`,
+    gridTemplateColumns: `repeat(${cols}, 1fr)`,
+    gap: '6px',
+    padding: '12px'
   };
 
-  const { cols, rows } = getGridDimensions(totalPieces);
-
-  // Generate piece styles with background image positioning
-  const getPieceStyle = (index) => {
-    const isRevealed = revealed[index];
-    const row = Math.floor(index / cols);
-    const col = index % cols;
+  // Get background style for a piece based on its position
+  const getPieceBackground = (piece) => {
+    if (!cityImage) return {};
     
-    // Pseudo-random but consistent values for organic look when hidden
-    const seed = (index * 9301 + 49297) % 233280;
-    const rotation = ((seed / 233280) - 0.5) * 12;
-    const offsetX = ((seed * 7 % 233280) / 233280 - 0.5) * 6;
-    const offsetY = ((seed * 13 % 233280) / 233280 - 0.5) * 6;
-    const scale = 0.92 + ((seed * 17 % 233280) / 233280) * 0.16;
+    // Calculate the portion of the image this piece represents
+    const firstCell = piece.cells[0];
+    const lastCell = piece.cells[piece.cells.length - 1];
     
-    if (!isRevealed) {
-      return {
-        background: '#1a1a2e',
-        border: '2px solid #2d2d44',
-        transform: `rotate(${rotation}deg) translate(${offsetX}px, ${offsetY}px) scale(${scale})`,
-        boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(255,255,255,0.05)',
-        borderRadius: '8px'
-      };
-    }
-
-    // Calculate background position for this piece of the image
-    const bgX = (col / (cols - 1)) * 100;
-    const bgY = (row / (rows - 1)) * 100;
+    const bgX = (firstCell.col / (cols - 1 || 1)) * 100;
+    const bgY = (firstCell.row / (rows - 1 || 1)) * 100;
     
     return {
-      backgroundImage: cityImage ? `url(${cityImage})` : 'none',
+      backgroundImage: `url(${cityImage})`,
       backgroundSize: `${cols * 100}% ${rows * 100}%`,
-      backgroundPosition: `${bgX}% ${bgY}%`,
-      border: '2px solid rgba(255,255,255,0.3)',
-      transform: 'rotate(0deg) translate(0px, 0px) scale(1)',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-      borderRadius: '8px',
-      animation: 'revealPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)'
+      backgroundPosition: `${bgX}% ${bgY}%`
     };
-  };
-
-  const gridStyle = {
-    gridTemplateColumns: `repeat(${cols}, 1fr)`,
-    gap: '4px',
-    padding: '8px'
   };
 
   return (
@@ -74,27 +62,56 @@ function PuzzleBoard({ revealed, showCelebration, onReset, onChangeCity, totalPi
             Change
           </button>
         </div>
-        <span className="progress">
-          {revealed.filter(r => r).length} / {totalPieces}
-        </span>
+        {showPuzzle && (
+          <span className="progress">
+            {revealedCount} / {totalPieces}
+          </span>
+        )}
       </div>
-      
-      <div className="organic-grid" style={gridStyle}>
-        {revealed.map((isRevealed, index) => (
-          <div
-            key={index}
-            className={`puzzle-piece ${isRevealed ? 'revealed' : ''} ${cityImage ? 'has-image' : ''}`}
-            style={getPieceStyle(index)}
-          >
-            {!isRevealed && (
-              <>
-                <span className="piece-number">{index + 1}</span>
-                <div className="piece-texture" />
-              </>
-            )}
+
+      {!showPuzzle ? (
+        <div className="puzzle-locked">
+          <div className="lock-icon">🔒</div>
+          <p>Complete your first todo to unlock the puzzle!</p>
+        </div>
+      ) : (
+        <>
+          <div className="available-reveals">
+            <span className="glow-indicator">
+              ✨ {availableReveals} reveal{availableReveals !== 1 ? 's' : ''} available
+            </span>
+            <span className="hint">Click a piece to reveal it</span>
           </div>
-        ))}
-      </div>
+          
+          <div className="polyomino-grid" style={gridStyle}>
+            {pieces.map(piece => {
+              const isRevealed = revealedPieces.has(piece.id);
+              const canReveal = !isRevealed && availableReveals > 0;
+              
+              return (
+                <div
+                  key={piece.id}
+                  className={`polyomino-piece ${isRevealed ? 'revealed' : ''} ${canReveal ? 'can-reveal' : ''}`}
+                  style={{
+                    gridRow: `${piece.gridRow} / span ${piece.rowSpan}`,
+                    gridColumn: `${piece.gridCol} / span ${piece.colSpan}`,
+                    ...(isRevealed ? getPieceBackground(piece) : {})
+                  }}
+                  onClick={() => canReveal && onRevealPiece(piece.id)}
+                >
+                  {!isRevealed && (
+                    <>
+                      <span className="piece-number">{piece.id + 1}</span>
+                      <div className="piece-pattern" />
+                    </>
+                  )}
+                  {canReveal && <div className="reveal-glow" />}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {showCelebration && (
         <div className="celebration">

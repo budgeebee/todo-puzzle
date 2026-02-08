@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './TodoList.css';
 
-function TodoList({ todos, setTodos, onTodoComplete, revealedCount, totalPieces }) {
+function TodoList({ todos, setTodos, completedCount, totalTodos, availableReveals, showPuzzle }) {
   const [newTodo, setNewTodo] = useState('');
 
   const addTodo = (e) => {
@@ -17,15 +17,6 @@ function TodoList({ todos, setTodos, onTodoComplete, revealedCount, totalPieces 
   };
 
   const toggleTodo = (id) => {
-    const todo = todos.find(t => t.id === id);
-    if (!todo.completed) {
-      // Find first unrevealed piece index
-      const unrevealedIndex = revealedCount;
-      if (unrevealedIndex < totalPieces) {
-        onTodoComplete(unrevealedIndex);
-      }
-    }
-    
     setTodos(todos.map(t => 
       t.id === id ? { ...t, completed: !t.completed } : t
     ));
@@ -35,15 +26,28 @@ function TodoList({ todos, setTodos, onTodoComplete, revealedCount, totalPieces 
     setTodos(todos.filter(t => t.id !== id));
   };
 
-  const progress = Math.round((revealedCount / totalPieces) * 100);
+  const progress = totalTodos > 0 ? Math.round((completedCount / totalTodos) * 100) : 0;
 
   return (
     <div className="todo-list">
       <h2>Your Tasks</h2>
       
+      {!showPuzzle ? (
+        <div className="unlock-hint">
+          <span className="lock-emoji">🔓</span>
+          <p>Complete 1 todo to unlock the puzzle!</p>
+        </div>
+      ) : (
+        <div className="reveals-status">
+          <span className="reveal-badge">
+            ✨ {availableReveals} reveal{availableReveals !== 1 ? 's' : ''} available
+          </span>
+        </div>
+      )}
+      
       <div className="progress-bar">
         <div className="progress" style={{ width: `${progress}%` }}></div>
-        <span>{revealedCount}/{totalPieces} pieces revealed</span>
+        <span>{completedCount}/{totalTodos} completed</span>
       </div>
 
       <form onSubmit={addTodo} className="add-todo">

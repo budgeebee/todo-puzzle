@@ -48,7 +48,51 @@
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
 }
 
-.organic-grid {
+/* Locked state */
+.puzzle-locked {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(145deg, #1a1a2e 0%, #0f0f23 100%);
+  border-radius: 16px;
+  border: 2px dashed rgba(255,255,255,0.1);
+}
+
+.lock-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.puzzle-locked p {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+/* Available reveals indicator */
+.available-reveals {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.glow-indicator {
+  color: #a5b4fc;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.hint {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* Polyomino grid */
+.polyomino-grid {
   display: grid;
   background: linear-gradient(145deg, #0f0f23 0%, #1a1a2e 100%);
   border-radius: 16px;
@@ -57,25 +101,24 @@
     0 1px 0 rgba(255,255,255,0.05);
   max-width: 360px;
   margin: 0 auto;
+  aspect-ratio: 1;
 }
 
-.puzzle-piece {
-  aspect-ratio: 1;
+.polyomino-piece {
+  position: relative;
+  background: linear-gradient(145deg, #1e1e32 0%, #151528 100%);
+  border: 2px solid #2d2d44;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: default;
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  position: relative;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   overflow: hidden;
+  min-height: 0;
 }
 
-.puzzle-piece:not(.revealed) {
-  background: linear-gradient(145deg, #1e1e32 0%, #151528 100%);
-}
-
-.puzzle-piece:not(.revealed)::before {
+.polyomino-piece:not(.revealed)::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -90,35 +133,76 @@
   opacity: 0.5;
 }
 
-.puzzle-piece:not(.revealed):hover {
-  filter: brightness(1.1);
-  transform: scale(1.02) !important;
+/* Can reveal state - glowing */
+.polyomino-piece.can-reveal {
+  cursor: pointer;
+  border-color: rgba(102, 126, 234, 0.5);
 }
 
-.puzzle-piece.revealed {
+.reveal-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: 
+    0 0 20px rgba(102, 126, 234, 0.4),
+    0 0 40px rgba(102, 126, 234, 0.2),
+    inset 0 0 20px rgba(102, 126, 234, 0.1);
+  animation: pulse-glow 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 
+      0 0 20px rgba(102, 126, 234, 0.4),
+      0 0 40px rgba(102, 126, 234, 0.2);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 
+      0 0 30px rgba(102, 126, 234, 0.6),
+      0 0 60px rgba(102, 126, 234, 0.3);
+  }
+}
+
+.polyomino-piece.can-reveal:hover {
+  transform: scale(1.03);
+  border-color: rgba(102, 126, 234, 0.8);
+  z-index: 10;
+}
+
+.polyomino-piece.can-reveal:hover .reveal-glow {
+  animation: none;
+  opacity: 1;
+  box-shadow: 
+    0 0 40px rgba(102, 126, 234, 0.6),
+    0 0 80px rgba(102, 126, 234, 0.3);
+}
+
+/* Revealed state */
+.polyomino-piece.revealed {
+  border: 2px solid rgba(255,255,255,0.3);
+  animation: reveal-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   box-shadow: 
     0 4px 15px rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
-.puzzle-piece.revealed.has-image {
-  border: 2px solid rgba(255,255,255,0.4);
-}
-
-@keyframes revealPop {
+@keyframes reveal-pop {
   0% {
-    transform: scale(0.3) rotate(-15deg);
+    transform: scale(0.5) rotate(-10deg);
     opacity: 0;
     filter: blur(10px);
   }
   60% {
-    transform: scale(1.1) rotate(3deg);
+    transform: scale(1.08) rotate(3deg);
     opacity: 1;
     filter: blur(0);
   }
   100% {
     transform: scale(1) rotate(0deg);
-    opacity: 1;
   }
 }
 
@@ -130,7 +214,7 @@
   z-index: 1;
 }
 
-.piece-texture {
+.piece-pattern {
   position: absolute;
   inset: 0;
   opacity: 0.3;
